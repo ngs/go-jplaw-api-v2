@@ -316,6 +316,12 @@ func (g *Generator) generateMethod(path, httpMethod string, operation *Operation
 	}
 
 	// Build method signature
+	// Add path parameters first
+	for _, param := range pathParams {
+		paramName := toCamelCase(param.Name)
+		params = append(params, fmt.Sprintf("%s string", paramName))
+	}
+	// Then add query parameters
 	if len(queryParams) > 0 {
 		params = append(params, fmt.Sprintf("params *%sParams", methodName))
 	}
@@ -354,13 +360,28 @@ func (g *Generator) generateMethod(path, httpMethod string, operation *Operation
 	}
 	sb.WriteString(fmt.Sprintf(") (*%s, error) {\n", responseType))
 
-	// Build URL
-	sb.WriteString(fmt.Sprintf("\turlPath := c.baseURL + %q\n", path))
-
-	// Replace path parameters
-	for _, param := range pathParams {
-		sb.WriteString(fmt.Sprintf("\t// TODO: Replace path parameter {%s}\n", param.Name))
-		sb.WriteString(fmt.Sprintf("\t// urlPath = strings.ReplaceAll(urlPath, \"{%s}\", pathParamValue)\n", param.Name))
+	// Build URL with path parameters
+	if len(pathParams) > 0 {
+		// Build the URL by splitting the path and inserting parameters
+		urlParts := strings.Split(path, "/")
+		sb.WriteString("\turlPath := c.baseURL")
+		for _, part := range urlParts {
+			if part == "" {
+				continue
+			}
+			if strings.HasPrefix(part, "{") && strings.HasSuffix(part, "}") {
+				// This is a path parameter
+				paramName := part[1 : len(part)-1]
+				sb.WriteString(fmt.Sprintf(" + \"/\" + %s", toCamelCase(paramName)))
+			} else {
+				// This is a literal path segment
+				sb.WriteString(fmt.Sprintf(" + \"/%s\"", part))
+			}
+		}
+		sb.WriteString("\n")
+	} else {
+		// No path parameters, use the path as-is
+		sb.WriteString(fmt.Sprintf("\turlPath := c.baseURL + %q\n", path))
 	}
 
 	// Add query parameters
@@ -416,12 +437,21 @@ func (g *Generator) generateMethod(path, httpMethod string, operation *Operation
 	sb.WriteString("\t\treturn nil, fmt.Errorf(\"API error %d: %s\", resp.StatusCode, string(body))\n")
 	sb.WriteString("\t}\n\n")
 
-	sb.WriteString(fmt.Sprintf("\tvar result %s\n", responseType))
-	sb.WriteString("\tif err := json.NewDecoder(resp.Body).Decode(&result); err != nil {\n")
-	sb.WriteString("\t\treturn nil, fmt.Errorf(\"failed to decode response: %w\", err)\n")
-	sb.WriteString("\t}\n\n")
-
-	sb.WriteString("\treturn &result, nil\n")
+	// Special handling for raw content endpoints (GetLawFile and GetAttachment return raw strings/bytes)
+	if methodName == "GetLawFile" || methodName == "GetAttachment" {
+		sb.WriteString("\tbody, err := io.ReadAll(resp.Body)\n")
+		sb.WriteString("\tif err != nil {\n")
+		sb.WriteString("\t\treturn nil, fmt.Errorf(\"failed to read response: %w\", err)\n")
+		sb.WriteString("\t}\n\n")
+		sb.WriteString("\tresult := string(body)\n")
+		sb.WriteString("\treturn &result, nil\n")
+	} else {
+		sb.WriteString(fmt.Sprintf("\tvar result %s\n", responseType))
+		sb.WriteString("\tif err := json.NewDecoder(resp.Body).Decode(&result); err != nil {\n")
+		sb.WriteString("\t\treturn nil, fmt.Errorf(\"failed to decode response: %w\", err)\n")
+		sb.WriteString("\t}\n\n")
+		sb.WriteString("\treturn &result, nil\n")
+	}
 	sb.WriteString("}\n\n")
 
 	return sb.String()

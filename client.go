@@ -35,10 +35,8 @@ type GetAttachmentParams struct {
 }
 
 // GetAttachment field from the API response
-func (c *Client) GetAttachment(params *GetAttachmentParams) (*string, error) {
-	urlPath := c.baseURL + "/attachment/{law_revision_id}"
-	// TODO: Replace path parameter {law_revision_id}
-	// urlPath = strings.ReplaceAll(urlPath, "{law_revision_id}", pathParamValue)
+func (c *Client) GetAttachment(lawRevisionId string, params *GetAttachmentParams) (*string, error) {
+	urlPath := c.baseURL + "/attachment" + "/" + lawRevisionId
 	if params != nil {
 		queryParams := url.Values{}
 		if params.Src != nil {
@@ -64,11 +62,12 @@ func (c *Client) GetAttachment(params *GetAttachmentParams) (*string, error) {
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result string
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
+	result := string(body)
 	return &result, nil
 }
 
@@ -218,10 +217,8 @@ type GetLawDataParams struct {
 }
 
 // GetLawData field from the API response
-func (c *Client) GetLawData(params *GetLawDataParams) (*LawDataResponse, error) {
-	urlPath := c.baseURL + "/law_data/{law_id_or_num_or_revision_id}"
-	// TODO: Replace path parameter {law_id_or_num_or_revision_id}
-	// urlPath = strings.ReplaceAll(urlPath, "{law_id_or_num_or_revision_id}", pathParamValue)
+func (c *Client) GetLawData(lawIdOrNumOrRevisionId string, params *GetLawDataParams) (*LawDataResponse, error) {
+	urlPath := c.baseURL + "/law_data" + "/" + lawIdOrNumOrRevisionId
 	if params != nil {
 		queryParams := url.Values{}
 		if params.LawFullTextFormat != nil {
@@ -277,12 +274,8 @@ type GetLawFileParams struct {
 }
 
 // GetLawFile field from the API response
-func (c *Client) GetLawFile(params *GetLawFileParams) (*string, error) {
-	urlPath := c.baseURL + "/law_file/{file_type}/{law_id_or_num_or_revision_id}"
-	// TODO: Replace path parameter {law_id_or_num_or_revision_id}
-	// urlPath = strings.ReplaceAll(urlPath, "{law_id_or_num_or_revision_id}", pathParamValue)
-	// TODO: Replace path parameter {file_type}
-	// urlPath = strings.ReplaceAll(urlPath, "{file_type}", pathParamValue)
+func (c *Client) GetLawFile(lawIdOrNumOrRevisionId string, fileType string, params *GetLawFileParams) (*string, error) {
+	urlPath := c.baseURL + "/law_file" + "/" + fileType + "/" + lawIdOrNumOrRevisionId
 	if params != nil {
 		queryParams := url.Values{}
 		if params.Asof != nil {
@@ -308,11 +301,12 @@ func (c *Client) GetLawFile(params *GetLawFileParams) (*string, error) {
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result string
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
+	result := string(body)
 	return &result, nil
 }
 
@@ -363,10 +357,8 @@ type GetRevisionsParams struct {
 }
 
 // GetRevisions field from the API response
-func (c *Client) GetRevisions(params *GetRevisionsParams) (*LawRevisionsResponse, error) {
-	urlPath := c.baseURL + "/law_revisions/{law_id_or_num}"
-	// TODO: Replace path parameter {law_id_or_num}
-	// urlPath = strings.ReplaceAll(urlPath, "{law_id_or_num}", pathParamValue)
+func (c *Client) GetRevisions(lawIdOrNum string, params *GetRevisionsParams) (*LawRevisionsResponse, error) {
+	urlPath := c.baseURL + "/law_revisions" + "/" + lawIdOrNum
 	if params != nil {
 		queryParams := url.Values{}
 		if params.LawTitle != nil {

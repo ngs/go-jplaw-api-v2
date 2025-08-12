@@ -6,7 +6,8 @@
       "Bash(go build:*)",
       "Bash(./clientgen:*)",
       "Bash(rm:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
