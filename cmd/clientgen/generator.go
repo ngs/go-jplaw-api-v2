@@ -167,10 +167,29 @@ func (g *Generator) generateStruct(name string, schema *Schema) string {
 		// Generate enum constants
 		sb.WriteString(fmt.Sprintf("type %s string\n\n", structName))
 		sb.WriteString(fmt.Sprintf("const (\n"))
-		for _, enumValue := range schema.Enum {
-			if str, ok := enumValue.(string); ok {
-				constName := fmt.Sprintf("%s%s", structName, toPascalCase(str))
-				sb.WriteString(fmt.Sprintf("\t%s %s = %q\n", constName, structName, str))
+		
+		// Special handling for CategoryCd to use meaningful names
+		if structName == "CategoryCd" {
+			categoryNames := getCategoryNames()
+			for _, enumValue := range schema.Enum {
+				if str, ok := enumValue.(string); ok {
+					if englishName, exists := categoryNames[str]; exists {
+						constName := fmt.Sprintf("%s%s", structName, englishName)
+						sb.WriteString(fmt.Sprintf("\t%s %s = %q\n", constName, structName, str))
+					} else {
+						// Fallback to original logic if not found
+						constName := fmt.Sprintf("%s%s", structName, toPascalCase(str))
+						sb.WriteString(fmt.Sprintf("\t%s %s = %q\n", constName, structName, str))
+					}
+				}
+			}
+		} else {
+			// Original logic for other enums
+			for _, enumValue := range schema.Enum {
+				if str, ok := enumValue.(string); ok {
+					constName := fmt.Sprintf("%s%s", structName, toPascalCase(str))
+					sb.WriteString(fmt.Sprintf("\t%s %s = %q\n", constName, structName, str))
+				}
 			}
 		}
 		sb.WriteString(")\n")
@@ -618,4 +637,60 @@ func containsComplexJapanese(s string) bool {
 	}
 
 	return false
+}
+
+// getCategoryNames returns a mapping from category codes to English names
+func getCategoryNames() map[string]string {
+	return map[string]string{
+		"001": "Constitution",         // 憲法
+		"002": "Criminal",             // 刑事
+		"003": "FinanceGeneral",       // 財務通則
+		"004": "Fisheries",            // 水産業
+		"005": "Tourism",              // 観光
+		"006": "Parliament",           // 国会
+		"007": "Police",               // 警察
+		"008": "NationalProperty",     // 国有財産
+		"009": "Mining",               // 鉱業
+		"010": "PostalService",        // 郵務
+		"011": "AdministrativeOrg",    // 行政組織
+		"012": "FireService",          // 消防
+		"013": "NationalTax",          // 国税
+		"014": "Industry",             // 工業
+		"015": "Telecommunications",   // 電気通信
+		"016": "CivilService",         // 国家公務員
+		"017": "NationalDevelopment",  // 国土開発
+		"018": "Business",             // 事業
+		"019": "Commerce",             // 商業
+		"020": "Labor",                // 労働
+		"021": "AdministrativeProc",   // 行政手続
+		"022": "Land",                 // 土地
+		"023": "NationalBonds",        // 国債
+		"024": "FinanceInsurance",     // 金融・保険
+		"025": "EnvironmentalProtect", // 環境保全
+		"026": "Statistics",           // 統計
+		"027": "CityPlanning",         // 都市計画
+		"028": "Education",            // 教育
+		"029": "ForeignExchangeTrade", // 外国為替・貿易
+		"030": "PublicHealth",         // 厚生
+		"031": "LocalGovernment",      // 地方自治
+		"032": "Roads",                // 道路
+		"033": "Culture",              // 文化
+		"034": "LandTransport",        // 陸運
+		"035": "SocialWelfare",        // 社会福祉
+		"036": "LocalFinance",         // 地方財政
+		"037": "Rivers",               // 河川
+		"038": "IndustryGeneral",      // 産業通則
+		"039": "MaritimeTransport",    // 海運
+		"040": "SocialInsurance",      // 社会保険
+		"041": "Judiciary",            // 司法
+		"042": "DisasterManagement",   // 災害対策
+		"043": "Agriculture",          // 農業
+		"044": "Aviation",             // 航空
+		"045": "Defense",              // 防衛
+		"046": "Civil",                // 民事
+		"047": "BuildingHousing",      // 建築・住宅
+		"048": "Forestry",             // 林業
+		"049": "FreightTransport",     // 貨物運送
+		"050": "ForeignAffairs",       // 外事
+	}
 }
